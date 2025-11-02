@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dama Química - Grupo 14 | Jogo Educativo</title>
+    <meta name="description" content="Jogo de damas educativo sobre o Grupo 14 da Tabela Periódica. Aprenda química de forma divertida!">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            color: #ffeb3b;
+            font-size: 1.6em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            margin-bottom: 5px;
+            color: #ccc;
+            font-size: 1em;
+        }
+
+        .class-info {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+
+        .score-board {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-size: 0.95em;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .score {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .captures-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            gap: 15px;
+        }
+
+        .captures {
+            background: rgba(255,255,255,0.15);
+            padding: 12px;
+            border-radius: 10px;
+            flex: 1;
+            min-height: 70px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .captures-title {
+            font-size: 0.85em;
+            margin-bottom: 8px;
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        .captured-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            min-height: 35px;
+        }
+
+        .captured-piece {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .captured-piece.king {
+            position: relative;
+        }
+
+        .captured-piece.king::after {
+            content: "♔";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: gold;
+            text-shadow: 1px 1px 1px black;
+        }
+
+        .player1 { background: linear-gradient(45deg, #ff4444, #cc0000); }
+        .player2 { background: linear-gradient(45deg, #4444ff, #0000cc); }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .board {
+            width: 340px;
+            height: 340px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            border: 4px solid #2c3e50;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+            touch-action: manipulation;
+            background: #34495e;
+        }
+
+        .cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            user-select: none;
+        }
+
+        .light {
+            background-color: #f0d9b5;
+        }
+
+        .dark {
+            background-color: #b58863;
+        }
+
+        .piece {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #2c3e50;
+            transition: all 0.3s;
+            z-index: 10;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .piece.selected {
+            border: 3px solid #ffeb3b;
+            box-shadow: 0 0 15px yellow;
+            transform: scale(1.15);
+        }
+
+        .piece.king::after {
+            content: "♔";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            color: gold;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .valid-move::after {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: rgba(46, 204, 113, 0.6);
+            border-radius: 50%;
+            border: 2px solid #27ae60;
+            z-index: 1;
+            box-shadow: 0 0 5px rgba(39, 174, 96, 0.5);
+        }
+
+        .capture-move::after {
+            content: "⚡";
+            position: absolute;
+            font-size: 22px;
+            color: #e74c3c;
+            z-index: 1;
+            text-shadow: 1px 1px 2px black;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .game-info {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .current-player {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #ffeb3b;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        #gameStatus {
+            margin-bottom: 18px;
+            min-height: 22px;
+            font-size: 0.95em;
+            color: #ecf0f1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(45deg, #ffeb3b, #f1c40f);
+            color: #2c3e50;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95em;
+            touch-action: manipulation;
+            transition: all 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            background: linear-gradient(45deg, #f1c40f, #f39c12);
+            transform: scale(0.95);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* Modais */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            color: #2c3e50;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 95%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border: 3px solid #ffeb3b;
+        }
+
+        .quiz-question {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            font-weight: bold;
+            color: #1e3c72;
+            line-height: 1.4;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .quiz-option {
+            padding: 18px;
+            background: #ecf0f1;
+            border: 3px solid #bdc3c7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .quiz-option:active {
+            background: #d5dbdb;
+            border-color: #1e3c72;
+            transform: scale(0.98);
+        }
+
+        #quizResult {
+            margin: 20px 0;
+            font-weight: bold;
+            min-height: 30px;
+            font-size: 1.1em;
+        }
+
+        .footer {
+            margin-top: 25px;
+            padding: 15px;
+            font-size: 0.8em;
+            color: #bdc3c7;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 400px) {
+            .board {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .piece {
+                width: 26px;
+                height: 26px;
+            }
+            
+            h1 {
+                font-size: 1.4em;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .board {
+                width: 280px;
+                height: 280px;
+            }
+            
+            .piece {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .captures-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>♟️ DAMA QUÍMICA - GRUPO 14</h1>
+            <p class="subtitle">Jogo Educativo de Química - Aprenda Brincando!</p>
+            <p class="class-info">Projeto desenvolvido para a disciplina de Química - 1º Ano</p>
+        </div>
+        
+        <div class="score-board">
+            <div class="score">🏆 PLACAR DO JOGO:</div>
+            <div class="score">Jogador 1 🔴: <span id="score1">0</span> vitórias</div>
+            <div class="score">Jogador 2 🔵: <span id="score2">0</span> vitórias</div>
+        </div>
+
+        <div class="captures-container">
+            <div class="captures">
+                <div class="captures-title">🎯 Capturas do Jogador 1 🔴</div>
+                <div class="captured-pieces" id="captures1"></div>
+            </div>
+            <div class="captures">
+                <div class="captures-title">🎯 Capturas do Jogador 2 🔵</div>
+                <div class="captured-pieces" id="captures2"></div>
+            </div>
+        </div>
+        
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+        
+        <div class="game-info">
+            <div class="current-player" id="currentPlayer">Jogador 1 🔴 - Sua Vez!</div>
+            <div id="gameStatus">Toque em uma peça vermelha para começar o jogo</div>
+            
+            <div class="controls">
+                <button onclick="startGame()">🔄 Novo Jogo</button>
+                <button onclick="resetScores()">📊 Zerar Placar</button>
+                <button onclick="showRules()">📖 Regras</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Desenvolvido para o Estudo do Grupo 14 da Tabela Periódica | Química - 1º Ano</p>
+            <p>🎓 Projeto Educativo - Centro de Ensino Médio 01 de Sobradinho</p>
+        </div>
+    </div>
+
+    <!-- Modal do Quiz -->
+    <div class="modal" id="quizModal">
+        <div class="modal-content">
+            <div class="quiz-question" id="quizQuestion"></div>
+            <div class="quiz-options" id="quizOptions"></div>
+            <div id="quizResult"></div>
+        </div>
+    </div>
+
+    <!-- Modal do Vencedor -->
+    <div class="modal" id="winnerModal">
+        <div class="modal-content">
+            <h2 style="color: #27ae60; margin-bottom: 15px;">🎉 Parabéns, Vencedor! 🎉</h2>
+            <p id="winnerMessage" style="font-size: 1.2em; margin-bottom: 20px;"></p>
+            <button onclick="closeWinnerModal()" style="margin-top: 10px; background: #27ae60; color: white;">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Modal de Regras -->
+    <div class="modal" id="rulesModal">
+        <div class="modal-content">
+            <h2 style="color: #1e3c72; margin-bottom: 20px;">📋 Regras do Jogo</h2>
+            <div style="text-align: left; line-height: 1.6;">
+                <p>🎯 <strong>OBJETIVO:</strong> Capturar todas as peças do adversário!</p>
+                <br>
+                <p>♟️ <strong>REGRAS DA DAMA:</strong></p>
+                <p>• Movimente suas peças na diagonal</p>
+                <p>• Capturas são <strong>obrigatórias</strong> quando disponíveis</p>
+                <p>• Peças viram <strong>Damas</strong> ao chegar no lado oposto</p>
+                <p>• Damas movem para frente e para trás</p>
+                <br>
+                <p>🧪 <strong>QUIZ QUÍMICO:</strong></p>
+                <p>• Antes de cada movimento, responda uma pergunta</p>
+                <p>• <strong style="color: green;">Acertou</strong> = Move a peça normalmente</p>
+                <p>• <strong style="color: red;">Errou</strong> = Perde a vez</p>
+                <br>
+                <p>🏆 <strong>VITÓRIA:</strong> Quem capturar todas as peças adversárias primeiro!</p>
+            </div>
+            <button onclick="closeRules()" style="margin-top: 20px;">Fechar Regras</button>
+        </div>
+    </div>
+
+    <script>
+        // Banco de perguntas sobre o Grupo 14
+        const questions = [
+            {
+                question: "Qual elemento do Grupo 14 forma diamante e grafite?",
+                options: ["Silício", "Carbono", "Germânio", "Estanho"],
+                correct: 1
+            },
+            {
+                question: "Usado na fabricação de chips e painéis solares:",
+                options: ["Chumbo", "Silício", "Germânio", "Estanho"],
+                correct: 1
+            },
+            {
+                question: "Elemento tóxico usado antigamente em gasolina:",
+                options: ["Estanho", "Chumbo", "Germânio", "Carbono"],
+                correct: 1
+            },
+            {
+                question: "Usado para fazer latas e soldas:",
+                options: ["Estanho", "Silício", "Germânio", "Chumbo"],
+                correct: 0
+            },
+            {
+                question: "Elemento essencial para todos os seres vivos:",
+                options: ["Carbono", "Silício", "Germânio", "Estanho"],
+                correct: 0
+            },
+            {
+                question: "Qual elemento é semicondutor e usado em eletrônicos?",
+                options: ["Germânio", "Chumbo", "Estanho", "Carbono"],
+                correct: 0
+            },
+            {
+                question: "Elemento mais abundante do Grupo 14 na crosta terrestre:",
+                options: ["Carbono", "Silício", "Germânio", "Estanho"],
+                correct: 1
+            }
+        ];
+
+        // Variáveis do jogo
+        let currentPlayer = 1;
+        let selectedPiece = null;
+        let gameActive = true;
+        let validMoves = [];
+        let score1 = 0;
+        let score2 = 0;
+        let mustCapture = false;
+        let capturesPlayer1 = [];
+        let capturesPlayer2 = [];
+
+        // Inicializar tabuleiro
+        function initializeBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    // Colocar peças nas posições iniciais (apenas nas casas escuras)
+                    if ((row + col) % 2 !== 0) {
+                        if (row < 3) {
+                            // Jogador 2 (Azul) - topo
+                            const piece = createPiece(2, false);
+                            cell.appendChild(piece);
+                        } else if (row > 4) {
+                            // Jogador 1 (Vermelho) - base
+                            const piece = createPiece(1, false);
+                            cell.appendChild(piece);
+                        }
+                    }
+
+                    // Event listener para toque
+                    cell.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        handleCellClick(row, col);
+                    });
+
+                    board.appendChild(cell);
+                }
+            }
+            updateScores();
+            updateCapturesDisplay();
+            checkForcedCaptures();
+        }
+
+        // Criar peça
+        function createPiece(player, isKing) {
+            const piece = document.createElement('div');
+            piece.className = `piece player${player}`;
+            piece.dataset.player = player;
+            piece.dataset.king = isKing;
+            if (isKing) {
+                piece.classList.add('king');
+            }
+            return piece;
+        }
+
+        // Manipular toque na célula
+        function handleCellClick(row, col) {
+            if (!gameActive) return;
+
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            const piece = cell.querySelector('.piece');
+
+            // Se clicou em uma peça do jogador atual
+            if (piece && parseInt(piece.dataset.player) === currentPlayer) {
+                // Se há capturas obrigatórias, só pode selecionar peças que podem capturar
+                if (mustCapture && !canPieceCapture(row, col)) {
+                    document.getElementById('gameStatus').textContent = 'Você deve capturar uma peça!';
+                    return;
+                }
+                selectPiece(row, col);
+            }
+            // Se clicou em um movimento válido e tem peça selecionada
+            else if (selectedPiece && isValidMove(row, col)) {
+                showQuiz(selectedPiece.row, selectedPiece.col, row, col);
+            }
+        }
+
+        // Selecionar peça
+        function selectPiece(row, col) {
+            clearSelection();
+            
+            selectedPiece = { row, col };
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            const piece = cell.querySelector('.piece');
+            piece.classList.add('selected');
+
+            // Calcular movimentos válidos
+            calculateValidMoves(row, col);
+            highlightValidMoves();
+
+            document.getElementById('gameStatus').textContent = 'Peça selecionada! Toque em uma casa destacada para mover.';
+        }
+
+        // Calcular movimentos válidos
+        function calculateValidMoves(row, col) {
+            validMoves = [];
+            const piece = getPieceAt(row, col);
+            const isKing = piece.dataset.king === 'true';
+            const player = parseInt(piece.dataset.player);
+            
+            // Se há capturas obrigatórias, só calcula capturas
+            if (mustCapture) {
+                calculateCaptures(row, col, player, isKing, []);
+            } else {
+                // Movimentos simples
+                calculateSimpleMoves(row, col, player, isKing);
+                
+                // Também verifica capturas (mas não obrigatórias)
+                const captures = [];
+                calculateCaptures(row, col, player, isKing, captures);
+                if (captures.length > 0) {
+                    validMoves = captures; // Prioriza capturas mesmo quando não obrigatórias
+                }
+            }
+        }
+
+        // Calcular movimentos simples
+        function calculateSimpleMoves(row, col, player, isKing) {
+            const directions = getDirections(player, isKing);
+            
+            directions.forEach(dir => {
+                const newRow = row + dir.row;
+                const newCol = col + dir.col;
+                
+                if (isValidPosition(newRow, newCol) && isEmpty(newRow, newCol)) {
+                    validMoves.push({
+                        row: newRow,
+                        col: newCol,
+                        type: 'simple'
+                    });
+                }
+            });
+        }
+
+        // Calcular capturas
+        function calculateCaptures(row, col, player, isKing, currentPath) {
+            const directions = getDirections(player, isKing);
+            let foundCapture = false;
+
+            directions.forEach(dir => {
+                const jumpRow = row + dir.row;
+                const jumpCol = col + dir.col;
+                const landRow = jumpRow + dir.row;
+                const landCol = jumpCol + dir.col;
+
+                // Verifica se pode capturar
+                if (isValidPosition(jumpRow, jumpCol) && 
+                    isValidPosition(landRow, landCol) &&
+                    hasOpponentPiece(jumpRow, jumpCol, player) && 
+                    isEmpty(landRow, landCol)) {
+                    
+                    // Verifica se esta captura já não está no caminho atual (para evitar loops)
+                    const captureKey = `${jumpRow},${jumpCol}`;
+                    if (!currentPath.includes(captureKey)) {
+                        foundCapture = true;
+                        const newPath = [...currentPath, captureKey];
+                        
+                        validMoves.push({
+                            row: landRow,
+                            col: landCol,
+                            type: 'capture',
+                            capture: { row: jumpRow, col: jumpCol },
+                            path: newPath
+                        });
+
+                        // Verifica capturas múltiplas
+                        calculateCaptures(landRow, landCol, player, isKing, newPath);
+                    }
+                }
+            });
+
+            return foundCapture;
+        }
+
+        // Obter direções baseadas no jogador e se é dama
+        function getDirections(player, isKing) {
+            const directions = [];
+            
+            if (isKing || player === 1) { // Para cima (Jogador 1 ou dama)
+                directions.push({ row: -1, col: -1 }, { row: -1, col: 1 });
+            }
+            if (isKing || player === 2) { // Para baixo (Jogador 2 ou dama)
+                directions.push({ row: 1, col: -1 }, { row: 1, col: 1 });
+            }
+            
+            return directions;
+        }
+
+        // Verificar se peça pode capturar
+        function canPieceCapture(row, col) {
+            const piece = getPieceAt(row, col);
+            const player = parseInt(piece.dataset.player);
+            const isKing = piece.dataset.king === 'true';
+            const tempMoves = [];
+            
+            return calculateCaptures(row, col, player, isKing, []);
+        }
+
+        // Verificar capturas obrigatórias para todos
+        function checkForcedCaptures() {
+            mustCapture = false;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = getPieceAt(row, col);
+                    if (piece && parseInt(piece.dataset.player) === currentPlayer) {
+                        if (canPieceCapture(row, col)) {
+                            mustCapture = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Destacar movimentos válidos
+        function highlightValidMoves() {
+            validMoves.forEach(move => {
+                const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
+                if (cell) {
+                    if (move.type === 'capture') {
+                        cell.classList.add('capture-move');
+                    } else {
+                        cell.classList.add('valid-move');
+                    }
+                }
+            });
+        }
+
+        // Verificar se movimento é válido
+        function isValidMove(row, col) {
+            return validMoves.some(move => move.row === row && move.col === col);
+        }
+
+        // Verificar se posição está dentro do tabuleiro
+        function isValidPosition(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        // Verificar se célula está vazia
+        function isEmpty(row, col) {
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            return cell && !cell.querySelector('.piece');
+        }
+
+        // Verificar se tem peça do oponente
+        function hasOpponentPiece(row, col, player) {
+            const piece = getPieceAt(row, col);
+            return piece && parseInt(piece.dataset.player) !== player;
+        }
+
+        // Obter peça em uma posição
+        function getPieceAt(row, col) {
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            return cell ? cell.querySelector('.piece') : null;
+        }
+
+        // Limpar seleção
+        function clearSelection() {
+            document.querySelectorAll('.piece.selected').forEach(piece => {
+                piece.classList.remove('selected');
+            });
+            document.querySelectorAll('.valid-move, .capture-move').forEach(cell => {
+                cell.classList.remove('valid-move', 'capture-move');
+            });
+            validMoves = [];
+        }
+
+        // Mostrar quiz
+        function showQuiz(fromRow, fromCol, toRow, toCol) {
+            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            const modal = document.getElementById('quizModal');
+            const questionElement = document.getElementById('quizQuestion');
+            const optionsElement = document.getElementById('quizOptions');
+            const resultElement = document.getElementById('quizResult');
+
+            questionElement.textContent = randomQuestion.question;
+            optionsElement.innerHTML = '';
+            resultElement.innerHTML = '';
+
+            randomQuestion.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'quiz-option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => {
+                    if (index === randomQuestion.correct) {
+                        resultElement.innerHTML = '<p style="color: green;">✅ Correto! Movendo peça...</p>';
+                        setTimeout(() => {
+                            closeQuiz();
+                            executeMove(fromRow, fromCol, toRow, toCol, true);
+                        }, 1200);
+                    } else {
+                        resultElement.innerHTML = '<p style="color: red;">❌ Errado! Perdeu a vez.</p>';
+                        setTimeout(() => {
+                            closeQuiz();
+                            executeMove(fromRow, fromCol, toRow, toCol, false);
+                        }, 1200);
+                    }
+                };
+                optionsElement.appendChild(optionElement);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        // Fechar quiz
+        function closeQuiz() {
+            document.getElementById('quizModal').style.display = 'none';
+        }
+
+        // Executar movimento
+        function executeMove(fromRow, fromCol, toRow, toCol, success) {
+            if (!success) {
+                document.getElementById('gameStatus').textContent = 'Resposta errada! Passando a vez.';
+                switchPlayer();
+                return;
+            }
+
+            const move = validMoves.find(m => m.row === toRow && m.col === toCol);
+            
+            // Mover peça
+            const fromCell = document.querySelector(`.cell[data-row="${fromRow}"][data-col="${fromCol}"]`);
+            const toCell = document.querySelector(`.cell[data-row="${toRow}"][data-col="${toCol}"]`);
+            const piece = fromCell.querySelector('.piece');
+
+            toCell.appendChild(piece);
+            fromCell.innerHTML = '';
+
+            // Executar captura se houver
+            let capturedPiece = false;
+            if (move && move.type === 'capture') {
+                const captureCell = document.querySelector(`.cell[data-row="${move.capture.row}"][data-col="${move.capture.col}"]`);
+                const capturedPieceElement = captureCell.querySelector('.piece');
+                
+                // Adicionar à lista de capturas
+                addToCaptures(currentPlayer, capturedPieceElement);
+                
+                captureCell.innerHTML = '';
+                capturedPiece = true;
+                document.getElementById('gameStatus').textContent = 'Peça capturada!';
+            } else {
+                document.getElementById('gameStatus').textContent = 'Movimento realizado!';
+            }
+
+            // Verificar se virou dama
+            checkForKing(toRow, toCol);
+
+            // Verificar vitória
+            if (checkWin()) {
+                declareWinner(currentPlayer);
+                return;
+            }
+
+            // Se capturou e pode capturar novamente, mantém o turno
+            if (capturedPiece && canPieceCapture(toRow, toCol)) {
+                selectedPiece = { row: toRow, col: toCol };
+                piece.classList.add('selected');
+                calculateValidMoves(toRow, toCol);
+                highlightValidMoves();
+                document.getElementById('gameStatus').textContent = 'Capture novamente!';
+            } else {
+                switchPlayer();
+            }
+        }
+
+        // Adicionar peça capturada à lista
+        function addToCaptures(capturingPlayer, pieceElement) {
+            const player = parseInt(pieceElement.dataset.player);
+            const isKing = pieceElement.dataset.king === 'true';
+            
+            const capturedPiece = {
+                player: player,
+                isKing: isKing
+            };
+            
+            if (capturingPlayer === 1) {
+                capturesPlayer1.push(capturedPiece);
+            } else {
+                capturesPlayer2.push(capturedPiece);
+            }
+            
+            updateCapturesDisplay();
+        }
+
+        // Atualizar display das capturas
+        function updateCapturesDisplay() {
+            const captures1Element = document.getElementById('captures1');
+            const captures2Element = document.getElementById('captures2');
+            
+            // Limpar displays
+            captures1Element.innerHTML = '';
+            captures2Element.innerHTML = '';
+            
+            // Adicionar peças capturadas do jogador 1
+            capturesPlayer1.forEach(captured => {
+                const pieceDiv = document.createElement('div');
+                pieceDiv.className = `captured-piece player${captured.player}`;
+                if (captured.isKing) {
+                    pieceDiv.classList.add('king');
+                }
+                captures1Element.appendChild(pieceDiv);
+            });
+            
+            // Adicionar peças capturadas do jogador 2
+            capturesPlayer2.forEach(captured => {
+                const pieceDiv = document.createElement('div');
+                pieceDiv.className = `captured-piece player${captured.player}`;
+                if (captured.isKing) {
+                    pieceDiv.classList.add('king');
+                }
+                captures2Element.appendChild(pieceDiv);
+            });
+            
+            // Mostrar contador se não houver peças
+            if (capturesPlayer1.length === 0) {
+                captures1Element.innerHTML = '<span style="color: #ccc; font-size: 0.8em;">Nenhuma captura</span>';
+            }
+            if (capturesPlayer2.length === 0) {
+                captures2Element.innerHTML = '<span style="color: #ccc; font-size: 0.8em;">Nenhuma captura</span>';
+            }
+        }
+
+        // Verificar se peça virou dama
+        function checkForKing(row, col) {
+            const piece = getPieceAt(row, col);
+            const player = parseInt(piece.dataset.player);
+            
+            if ((player === 1 && row === 0) || (player === 2 && row === 7)) {
+                piece.dataset.king = 'true';
+                piece.classList.add('king');
+            }
+        }
+
+        // Trocar jogador
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updatePlayerDisplay();
+            clearSelection();
+            selectedPiece = null;
+            checkForcedCaptures();
+            
+            if (mustCapture) {
+                document.getElementById('gameStatus').textContent = 'Captura obrigatória! Toque em uma peça que pode capturar.';
+            }
+        }
+
+        // Verificar vitória
+        function checkWin() {
+            const pieces1 = document.querySelectorAll('.piece.player1');
+            const pieces2 = document.querySelectorAll('.piece.player2');
+            
+            return pieces1.length === 0 || pieces2.length === 0;
+        }
+
+        // Declarar vencedor
+        function declareWinner(winner) {
+            gameActive = false;
+            
+            if (winner === 1) {
+                score1++;
+                showWinnerModal("Jogador 1 🔴 Venceu! 🎉");
+            } else {
+                score2++;
+                showWinnerModal("Jogador 2 🔵 Venceu! 🎉");
+            }
+            
+            updateScores();
+        }
+
+        // Mostrar modal do vencedor
+        function showWinnerModal(message) {
+            document.getElementById('winnerMessage').textContent = message;
+            document.getElementById('winnerModal').style.display = 'flex';
+        }
+
+        // Fechar modal do vencedor
+        function closeWinnerModal() {
+            document.getElementById('winnerModal').style.display = 'none';
+            startGame();
+        }
+
+        // Atualizar placar
+        function updateScores() {
+            document.getElementById('score1').textContent = score1;
+            document.getElementById('score2').textContent = score2;
+        }
+
+        // Atualizar display do jogador
+        function updatePlayerDisplay() {
+            const playerElement = document.getElementById('currentPlayer');
+            playerElement.textContent = currentPlayer === 1 ? 
+                'Jogador 1 🔴 - Sua vez!' : 
+                'Jogador 2 🔵 - Sua vez!';
+        }
+
+        // Zerar placar
+        function resetScores() {
+            score1 = 0;
+            score2 = 0;
+            capturesPlayer1 = [];
+            capturesPlayer2 = [];
+            updateScores();
+            updateCapturesDisplay();
+            startGame();
+        }
+
+        // Iniciar novo jogo
+        function startGame() {
+            currentPlayer = 1;
+            selectedPiece = null;
+            gameActive = true;
+            validMoves = [];
+            mustCapture = false;
+            capturesPlayer1 = [];
+            capturesPlayer2 = [];
+            initializeBoard();
+            updatePlayerDisplay();
+            document.getElementById('gameStatus').textContent = 'Jogo iniciado! Toque em uma peça vermelha.';
+        }
+
+        // Função para mostrar regras
+        function showRules() {
+            document.getElementById('rulesModal').style.display = 'flex';
+        }
+
+        // Função para fechar regras
+        function closeRules() {
+            document.getElementById('rulesModal').style.display = 'none';
+        }
+
+        // Inicializar quando a página carregar
+        window.onload = startGame;
+
+        // Prevenir zoom com double-tap
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
